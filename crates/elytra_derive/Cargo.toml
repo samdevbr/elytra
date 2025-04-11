@@ -1,5 +1,11 @@
 [package]
 name = "elytra_derive"
+license = "MIT"
+description = "Macros implementation of #[derive(Node, Relation)]"
+authors = ["Samuel Oliveira"]
+categories = ["database", "data-structures"]
+homepage = "https://github.com/samdevbr/elytra"
+repository = "https://github.com/samdevbr/elytra"
 version = "0.1.0"
 edition = "2021"
 

@@ -1,5 +1,11 @@
 [package]
 name = "elytra"
+license = "MIT"
+description = "An OGM for Neo4J built on the official Neo4j Rust driver."
+authors = ["Samuel Oliveira"]
+categories = ["database", "data-structures"]
+homepage = "https://github.com/samdevbr/elytra"
+repository = "https://github.com/samdevbr/elytra"
 version = "0.1.0"
 edition = "2021"
 
