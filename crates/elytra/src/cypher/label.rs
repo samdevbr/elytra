@@ -38,7 +38,7 @@ where
     /// ```
     ///
     fn to_cypher(self) -> String {
-        let labels = self.map(|l| l.to_cypher()).collect::<Vec<_>>();
+        let labels = self.map(ToCypher::to_cypher).collect::<Vec<_>>();
 
         format!(":{}", labels.join(":"))
     }
