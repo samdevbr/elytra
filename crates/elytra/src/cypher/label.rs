@@ -16,6 +16,13 @@ impl Label {
     }
 }
 
+pub fn label<I>(ident: I) -> Label
+where
+    I: AsRef<str>,
+{
+    Label::new(ident)
+}
+
 impl ToCypher for Label {
     fn to_cypher(self) -> String {
         self.ident
@@ -28,12 +35,15 @@ where
 {
     ///
     /// ```rust
-    /// use elytra::cypher::{ToCypher, Label};
+    /// use elytra::cypher::{self, ToCypher};
     ///
-    /// let label_expr = vec![Label::new("Person")];
+    /// let label = cypher::label("Person");
+    /// assert_eq!("Person", label.to_cypher());
+    ///
+    /// let label_expr = vec![cypher::label("Person")];
     /// assert_eq!(":Person", label_expr.into_iter().to_cypher());
     ///
-    /// let label_expr = vec![Label::new("Person"), Label::new("Employee")];
+    /// let label_expr = vec![cypher::label("Person"), cypher::label("Employee")];
     /// assert_eq!(":Person:Employee", label_expr.into_iter().to_cypher());
     /// ```
     ///
