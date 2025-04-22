@@ -1,0 +1,7 @@
+[workspace]
+resolver = "2"
+members = ["crates/*"]
+
+[profile.dev.package.rust-rocksdb]
+opt-level = 3
+debug = false
