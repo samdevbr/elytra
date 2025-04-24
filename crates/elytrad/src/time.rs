@@ -3,8 +3,10 @@ use std::{
     time::{Duration, SystemTime},
 };
 
+pub const EPOCH_OFFSET: u64 = 1_735_689_600;
+
 pub static EPOCH: LazyLock<SystemTime> =
-    LazyLock::new(|| SystemTime::UNIX_EPOCH + Duration::from_secs(1_735_689_600));
+    LazyLock::new(|| SystemTime::UNIX_EPOCH + Duration::from_secs(EPOCH_OFFSET));
 
 /// Milliseconds elapsed since 2025-01-01T00:00:00 (UTC)
 pub fn now() -> u64 {

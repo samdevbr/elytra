@@ -4,10 +4,50 @@ use std::{
     sync::atomic::{AtomicU8, Ordering},
 };
 
-static THREAD_ID_SEQ: AtomicU8 = AtomicU8::new(0);
+static WORKER_SEQ_ID: AtomicU8 = AtomicU8::new(0);
 
+/// 64-bit Snowflake with the following layout:
+///
+/// ```
+/// +------------+------------+-------------+------------+
+/// | Timestamp  | Node ID    | Worker ID   | Increment  |
+/// | 42 bits    | 5 bits     | 5 bits      | 12 bits    |
+/// +------------+------------+-------------+------------+
+/// 63         22 21        17 16         12 11          0
+/// ```
+///
+/// Epoch that starts at 25-01-01, allowing us to generate ids until August 2164
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Snowflake(u64);
+
+impl Snowflake {
+    /// Returns time snowflake timestamp (ms since custom epoch)
+    pub fn timestamp(&self) -> u64 {
+        return self.0 >> 22;
+    }
+
+    /// Returns time snowflake unix timestamp (secs since unix epoch)
+    pub fn unix_timestamp(&self) -> u64 {
+        (self.timestamp() / 1000) + crate::time::EPOCH_OFFSET
+    }
+
+    pub fn worker_id(&self) -> u8 {
+        return ((self.0 >> 12) & 0x1F) as u8;
+    }
+
+    pub fn node_id(&self) -> u8 {
+        return ((self.0 >> 17) & 0x1F) as u8;
+    }
+
+    pub fn from_str<T>(v: T) -> Result<Self, base62::DecodeError>
+    where
+        T: AsRef<str>,
+    {
+        let id = base62::decode(v.as_ref())? as u64;
+
+        Ok(Self(id))
+    }
+}
 
 impl Display for Snowflake {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -19,7 +59,7 @@ impl Display for Snowflake {
 
 #[derive(Debug)]
 pub struct Generator {
-    thread_id: u8,
+    worker_id: u8,
     sequence: u16,
     timestamp: u64,
 }
@@ -44,7 +84,7 @@ impl Generator {
 
         let id = (current_ts << 22)
             | (node_id as u64) << 17
-            | (self.thread_id as u64) << 12
+            | (self.worker_id as u64) << 12
             | self.sequence as u64;
 
         Snowflake(id)
@@ -54,7 +94,7 @@ impl Generator {
 impl Default for Generator {
     fn default() -> Self {
         Self {
-            thread_id: THREAD_ID_SEQ.fetch_add(1, Ordering::AcqRel),
+            worker_id: WORKER_SEQ_ID.fetch_add(1, Ordering::AcqRel),
             sequence: 0,
             timestamp: 0,
         }
@@ -65,6 +105,7 @@ thread_local! {
     static GENERATOR: RefCell<Generator> = RefCell::new(Generator::default());
 }
 
+/// Returns a new monotonic snowflake
 pub fn snowflake(node_id: u8) -> Snowflake {
     GENERATOR.with(|generator| generator.borrow_mut().next_id(node_id))
 }
