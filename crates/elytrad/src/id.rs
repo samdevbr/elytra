@@ -25,7 +25,6 @@ pub struct Generator {
 }
 
 impl Generator {
-    #[inline(never)]
     pub fn next_id(&mut self, node_id: u8) -> Snowflake {
         let mut current_ts = crate::time::now();
 
@@ -66,7 +65,6 @@ thread_local! {
     static GENERATOR: RefCell<Generator> = RefCell::new(Generator::default());
 }
 
-#[inline(never)]
 pub fn snowflake(node_id: u8) -> Snowflake {
     GENERATOR.with(|generator| generator.borrow_mut().next_id(node_id))
 }
