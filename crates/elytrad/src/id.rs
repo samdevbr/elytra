@@ -18,7 +18,7 @@ static WORKER_SEQ_ID: AtomicU8 = AtomicU8::new(0);
 ///
 /// Epoch that starts at 25-01-01, allowing us to generate ids until August 2164
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
-pub struct Snowflake(u64);
+pub struct Snowflake(pub(crate) u64);
 
 impl Snowflake {
     /// Returns time snowflake timestamp (ms since custom epoch)
@@ -66,6 +66,8 @@ pub struct Generator {
 
 impl Generator {
     pub fn next_id(&mut self, node_id: u8) -> Snowflake {
+        assert!(node_id < 0x1F, "node id out of range: {node_id} ({})", 0x1F);
+
         let mut current_ts = crate::time::now();
 
         if current_ts == self.timestamp {
