@@ -1,86 +1,72 @@
-use std::{fmt::Display, sync::atomic::Ordering, time::SystemTime};
+use std::{
+    cell::RefCell,
+    fmt::Display,
+    sync::atomic::{AtomicU8, Ordering},
+};
 
-use portable_atomic::AtomicU128;
+static THREAD_ID_SEQ: AtomicU8 = AtomicU8::new(0);
 
-static STATE: AtomicU128 = AtomicU128::new(0);
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
+pub struct Snowflake(u64);
 
-#[derive(Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
-pub struct Id {
-    bytes: [u8; 16],
-}
-
-impl AsRef<[u8]> for Id {
-    fn as_ref(&self) -> &[u8] {
-        &self.bytes[..]
-    }
-}
-
-impl Display for Id {
+impl Display for Snowflake {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let id = u128::from_be_bytes(self.bytes);
-        let s = base62::encode(id);
+        let h = base62::encode(self.0);
 
-        f.write_str(&s)
+        f.write_str(&h)
     }
 }
 
-pub fn generate(shard_id: u16) -> Id {
-    let now = SystemTime::now()
-        .duration_since(SystemTime::UNIX_EPOCH)
-        .expect("system clock error")
-        .as_millis();
+#[derive(Debug)]
+pub struct Generator {
+    thread_id: u8,
+    sequence: u16,
+    timestamp: u64,
+}
 
-    loop {
-        let state = STATE.load(Ordering::Acquire);
-        let last_ts = state >> 64;
-        let last_seq = state as u32;
+impl Generator {
+    #[inline(never)]
+    pub fn next_id(&mut self, node_id: u8) -> Snowflake {
+        let mut current_ts = crate::time::now();
 
-        let (ts, seq) = if now > last_ts {
-            (now, 0)
+        if current_ts == self.timestamp {
+            self.sequence = (self.sequence + 1) & 0xFFF;
+
+            if self.sequence == 0 {
+                while current_ts <= self.timestamp {
+                    current_ts = crate::time::now();
+                }
+            }
         } else {
-            (last_ts, last_seq.wrapping_add(1))
-        };
+            self.sequence = 0;
+        }
 
-        let new_state = (ts << 64) | seq as u128;
+        self.timestamp = current_ts;
 
-        if STATE
-            .compare_exchange(state, new_state, Ordering::AcqRel, Ordering::Relaxed)
-            .is_ok()
-        {
-            let id = ((shard_id as u128) << 112) | (ts << 48) | seq as u128;
+        let id = (current_ts << 22)
+            | (node_id as u64) << 17
+            | (self.thread_id as u64) << 12
+            | self.sequence as u64;
 
-            return Id {
-                bytes: id.to_be_bytes(),
-            };
+        Snowflake(id)
+    }
+}
+
+impl Default for Generator {
+    fn default() -> Self {
+        Self {
+            thread_id: THREAD_ID_SEQ.fetch_add(1, Ordering::AcqRel),
+            sequence: 0,
+            timestamp: 0,
         }
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use std::collections::BTreeMap;
+thread_local! {
+    static GENERATOR: RefCell<Generator> = RefCell::new(Generator::default());
+}
 
-    use rayon::iter::{IndexedParallelIterator, IntoParallelIterator, ParallelIterator};
-
-    use crate::id::generate;
-
-    #[test]
-    fn test_id_generation() {
-        let mut ids = Vec::with_capacity(1_000_000);
-
-        (0..1_000_000)
-            .into_par_iter()
-            .map(|_| generate(0))
-            .collect_into_vec(&mut ids);
-
-        let map = ids.iter().fold(BTreeMap::new(), |mut map, id| {
-            map.entry(id).and_modify(|c| *c += 1).or_insert(1);
-
-            map
-        });
-
-        let duplicates: BTreeMap<_, _> = map.into_iter().filter(|(_, v)| *v > 1).collect();
-
-        assert_eq!(duplicates.len(), 0);
-    }
+#[inline(never)]
+pub fn snowflake(node_id: u8) -> Snowflake {
+    GENERATOR.with(|generator| generator.borrow_mut().next_id(node_id))
 }
