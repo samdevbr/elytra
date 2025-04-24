@@ -1,35 +1,28 @@
-use criterion::{criterion_group, criterion_main, Criterion};
-use elytrad::id::generate;
+use criterion::{black_box, criterion_group, criterion_main, Criterion};
+use elytrad::id::snowflake;
+use rayon::prelude::*;
 
-fn bench_id_generation(c: &mut Criterion) {
-    let mut group = c.benchmark_group("ID Generation");
-
-    group.throughput(criterion::Throughput::Elements(1));
-
-    group.bench_function("id::generate", |b| {
+// Benchmark single-threaded snowflake generation
+fn bench_single_thread(c: &mut Criterion) {
+    c.bench_function("snowflake_single_thread", |b| {
         b.iter(|| {
-            let _id = generate(0);
+            for _ in 0..1_000 {
+                black_box(snowflake(0));
+            }
         });
     });
-
-    group.finish();
 }
 
-fn bench_base62_encoding(c: &mut Criterion) {
-    let mut group = c.benchmark_group("ID Generation");
-
-    let id = generate(0);
-
-    group.throughput(criterion::Throughput::Elements(1));
-
-    group.bench_function("base62::encode", |b| {
+// Benchmark multithreaded snowflake generation with Rayon
+fn bench_multi_thread(c: &mut Criterion) {
+    c.bench_function("snowflake_multi_thread", |b| {
         b.iter(|| {
-            let _ = id.to_string();
+            (0..100_000).into_par_iter().for_each(|_| {
+                black_box(snowflake(0));
+            });
         });
     });
-
-    group.finish();
 }
 
-criterion_group!(benches, bench_id_generation, bench_base62_encoding);
+criterion_group!(benches, bench_single_thread, bench_multi_thread);
 criterion_main!(benches);
