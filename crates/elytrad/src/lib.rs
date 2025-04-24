@@ -1,7 +1,8 @@
 use std::sync::OnceLock;
 
-pub mod document;
+pub mod field;
 pub mod id;
+pub mod key;
 pub mod shard;
 pub mod time;
 
