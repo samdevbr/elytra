@@ -1,4 +1,3 @@
-use bytes::Bytes;
 use xxhash_rust::xxh64::xxh64;
 
 #[derive(Debug)]
@@ -6,7 +5,7 @@ pub struct FieldKey(pub(crate) [u8; 8]);
 
 pub struct Field {
     name: String,
-    value: cbor::Cbor,
+    value: serde_cbor::Value,
 }
 
 impl Field {
