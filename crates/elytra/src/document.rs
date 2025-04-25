@@ -1,10 +1,14 @@
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 
 use bytes::{BufMut, BytesMut};
 use sled::Batch;
 use snowflake::{snowflake, Snowflake};
 
-use crate::{key::Key, shard::RecordEncoder, Hashable};
+use crate::{
+    key::Key,
+    shard::{RecordDecoder, RecordEncoder},
+    Hashable,
+};
 
 #[derive(Debug)]
 pub struct Document {
@@ -25,11 +29,23 @@ impl Document {
         }
     }
 
-    pub fn set_field<V>(&mut self, k: String, v: V) -> Option<serde_cbor::Value>
+    pub fn new_with_pk<L>(label: L, pk: Snowflake) -> Self
     where
+        L: AsRef<str>,
+    {
+        Self {
+            id: pk,
+            label: label.as_ref().to_string(),
+            fields: BTreeMap::new(),
+        }
+    }
+
+    pub fn set_field<K, V>(&mut self, k: K, v: V) -> Option<serde_cbor::Value>
+    where
+        K: AsRef<str>,
         V: Into<serde_cbor::Value>,
     {
-        self.fields.insert(k, v.into())
+        self.fields.insert(k.as_ref().to_string(), v.into())
     }
 }
 
@@ -52,10 +68,79 @@ impl RecordEncoder for Document {
 
             batch.insert(
                 Key::from(buf.to_vec()),
-                serde_cbor::to_vec(&v).expect("failed to serialize field"),
+                serde_cbor::to_vec(&(k, v)).expect("failed to serialize field"),
             );
         }
 
         db.apply_batch(batch).map(|_| self.id)
+    }
+}
+
+impl RecordDecoder for Document {
+    type Record = Self;
+
+    fn decode_from<F>(self, db: &sled::Db, projection: Option<Vec<F>>) -> Result<Self, sled::Error>
+    where
+        F: AsRef<str>,
+    {
+        let projection: Option<BTreeSet<u64>> =
+            projection.map(|p| p.into_iter().map(|f| f.as_ref().hash64()).collect());
+
+        let (field_lower_bound, field_upper_bound) = match &projection {
+            Some(fields) => {
+                let lower_field = fields.first().expect("missing lower bound field");
+                let upper_field = fields.last().expect("missing upper bound field");
+
+                (*lower_field, *upper_field)
+            }
+            None => (u64::MIN, u64::MAX),
+        };
+
+        let mut buf = BytesMut::with_capacity(32);
+
+        buf.put_u64(0x01); // tag
+        buf.put_u64(self.label.hash64()); // document label
+        buf.put_u64(field_lower_bound); // field lower bound
+        buf.put_u64(self.id.as_u64()); // pk
+
+        let lower_key = Key::from(buf.to_vec());
+
+        buf.clear();
+
+        buf.put_u64(0x01); // tag
+        buf.put_u64(self.label.hash64()); // document label
+        buf.put_u64(field_upper_bound); // field lower bound
+        buf.put_u64(self.id.as_u64()); // pk
+
+        let upper_key = Key::from(buf.to_vec());
+
+        let mut fields = BTreeMap::new();
+
+        for op in db.range(lower_key..=upper_key) {
+            let (k, v) = op?;
+            let (k, v) = (Key::from(k), v.as_ref());
+
+            if let Some(projection) = &projection {
+                let mut hash = [0u8; 8];
+                hash.copy_from_slice(&k[16..24]);
+
+                let hash = u64::from_be_bytes(hash);
+
+                if !projection.contains(&hash) {
+                    continue;
+                }
+            }
+
+            let (label, value): (String, serde_cbor::Value) =
+                serde_cbor::from_slice(v).expect("failed to deserialize column");
+
+            fields.insert(label, value);
+        }
+
+        Ok(Document {
+            id: self.id,
+            label: self.label.to_owned(),
+            fields,
+        })
     }
 }

@@ -48,3 +48,9 @@ impl Into<IVec> for Key {
         IVec::from(self.as_ref())
     }
 }
+
+impl From<IVec> for Key {
+    fn from(value: IVec) -> Self {
+        Self::from(value.to_vec())
+    }
+}
