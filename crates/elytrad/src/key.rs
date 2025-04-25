@@ -1,6 +1,5 @@
 use std::ops::{Deref, DerefMut};
 
-use bytes::{Buf, Bytes};
 use sled::IVec;
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
@@ -32,9 +31,9 @@ impl DerefMut for Key {
     }
 }
 
-impl From<Bytes> for Key {
-    fn from(value: Bytes) -> Self {
-        assert!(value.remaining() == 32, "invalid key length");
+impl From<Vec<u8>> for Key {
+    fn from(value: Vec<u8>) -> Self {
+        assert!(value.len() == 32, "invalid key length");
 
         let mut buf = [0u8; 32];
 
