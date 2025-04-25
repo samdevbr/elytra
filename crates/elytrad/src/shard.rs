@@ -1,6 +1,6 @@
 use sled::Db;
 
-use crate::id::Snowflake;
+use snowflake::Snowflake;
 
 pub trait RecordEncoder {
     fn encode_into(&self, db: &Db) -> Result<Snowflake, sled::Error>;
