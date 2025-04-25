@@ -1,0 +1,16 @@
+[package]
+name = "snowflake"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+base62 = "2.2.1"
+epoch = { version = "0.1.0", path = "../epoch" }
+
+[dev-dependencies]
+rayon = "1.10.0"
+criterion = "0.5.1"
+
+[[bench]]
+name = "id"
+harness = false
