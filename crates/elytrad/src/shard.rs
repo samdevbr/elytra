@@ -2,7 +2,7 @@ use sled::Db;
 
 use crate::id::Snowflake;
 
-pub trait Encodable {
+pub trait RecordEncoder {
     fn encode_into(&self, db: &Db) -> Result<Snowflake, sled::Error>;
 }
 
@@ -11,7 +11,7 @@ pub struct Shard {
 }
 
 impl Shard {
-    pub fn put<R: Encodable>(&self, record: R) -> Result<Snowflake, sled::Error> {
-        record.encode_into(&self.db)
+    pub fn put<E: RecordEncoder>(&self, encoder: E) -> Result<Snowflake, sled::Error> {
+        encoder.encode_into(&self.db)
     }
 }

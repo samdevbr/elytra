@@ -3,7 +3,7 @@ use std::collections::BTreeMap;
 use bytes::{BufMut, BytesMut};
 use sled::Batch;
 
-use crate::{id::Snowflake, key::Key, shard::Encodable, Hashable};
+use crate::{id::Snowflake, key::Key, shard::RecordEncoder, Hashable};
 
 pub struct Document {
     id: Snowflake,
@@ -11,7 +11,7 @@ pub struct Document {
     fields: BTreeMap<String, serde_cbor::Value>,
 }
 
-impl Encodable for Document {
+impl RecordEncoder for Document {
     fn encode_into(&self, db: &sled::Db) -> Result<crate::id::Snowflake, sled::Error> {
         let mut buf = BytesMut::with_capacity(32);
         let mut batch = Batch::default();
