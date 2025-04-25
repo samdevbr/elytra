@@ -12,6 +12,28 @@ pub struct Document {
     fields: BTreeMap<String, serde_cbor::Value>,
 }
 
+impl Document {
+    pub fn new<I>(label: String, fields: Option<I>) -> Self
+    where
+        I: Iterator<Item = (String, serde_cbor::Value)>,
+    {
+        Self {
+            id: snowflake(),
+            fields: fields
+                .map(|f| f.collect())
+                .unwrap_or_else(|| BTreeMap::new()),
+            label,
+        }
+    }
+
+    pub fn set_field<V>(&mut self, k: String, v: V) -> Option<serde_cbor::Value>
+    where
+        V: Into<serde_cbor::Value>,
+    {
+        self.fields.insert(k, v.into())
+    }
+}
+
 impl RecordEncoder for Document {
     fn encode_into(&self, db: &sled::Db) -> Result<Snowflake, sled::Error> {
         let mut buf = BytesMut::with_capacity(32);
