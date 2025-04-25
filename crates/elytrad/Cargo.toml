@@ -8,7 +8,9 @@ base62 = "2.2.1"
 bytes = "1.10.1"
 serde_cbor = "0.11.2"
 sled = "0.34.7"
-xxhash-rust = { version = "0.8.15", default-features = false, features = ["xxh64"] }
+xxhash-rust = { version = "0.8.15", default-features = false, features = [
+    "xxh64",
+] }
 
 [dev-dependencies]
 rayon = "1.10.0"
