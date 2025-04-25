@@ -20,7 +20,7 @@ static WORKER_SEQ_ID: AtomicU8 = AtomicU8::new(0);
 /// 63         22 21        17 16         12 11          0
 /// ```
 ///
-/// Epoch that starts at 25-01-01, allowing us to generate ids until August 2164
+/// Epoch starts at 25-01-01, allowing us to generate ids until August 2164
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Snowflake(pub(crate) u64);
 
@@ -131,6 +131,11 @@ pub fn set_node_id(id: u8) {
 }
 
 /// Returns a new monotonic snowflake
+#[inline]
 pub fn snowflake() -> Snowflake {
+    if !epoch::is_global_epoch_offset_set() {
+        epoch::set_global_epoch_offset(Duration::from_secs(1_735_689_600));
+    }
+
     GENERATOR.with(|generator| generator.borrow_mut().next_id(node_id()))
 }

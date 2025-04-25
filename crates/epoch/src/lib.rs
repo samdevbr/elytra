@@ -38,6 +38,7 @@ pub fn set_global_epoch_offset(offset: Duration) {
     EPOCH_OFFSET.set(offset).ok();
 }
 
+#[inline]
 pub fn is_global_epoch_offset_set() -> bool {
     EPOCH_OFFSET.get().is_some()
 }

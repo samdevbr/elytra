@@ -1,5 +1,3 @@
-use std::time::Duration;
-
 use criterion::{Criterion, black_box, criterion_group, criterion_main};
 use rayon::prelude::*;
 use snowflake::snowflake;
@@ -7,7 +5,6 @@ use snowflake::snowflake;
 // Benchmark single-threaded snowflake generation
 fn bench_single_thread(c: &mut Criterion) {
     snowflake::set_node_id(1);
-    epoch::set_global_epoch_offset(Duration::from_secs(1_735_689_600));
 
     c.bench_function("snowflake_single_thread", |b| {
         b.iter(|| {
