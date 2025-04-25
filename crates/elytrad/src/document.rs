@@ -2,8 +2,9 @@ use std::collections::BTreeMap;
 
 use bytes::{BufMut, BytesMut};
 use sled::Batch;
+use snowflake::{snowflake, Snowflake};
 
-use crate::{id::Snowflake, key::Key, shard::RecordEncoder, Hashable};
+use crate::{key::Key, shard::RecordEncoder, Hashable};
 
 pub struct Document {
     id: Snowflake,
@@ -12,7 +13,7 @@ pub struct Document {
 }
 
 impl RecordEncoder for Document {
-    fn encode_into(&self, db: &sled::Db) -> Result<crate::id::Snowflake, sled::Error> {
+    fn encode_into(&self, db: &sled::Db) -> Result<Snowflake, sled::Error> {
         let mut buf = BytesMut::with_capacity(32);
         let mut batch = Batch::default();
 
@@ -23,10 +24,10 @@ impl RecordEncoder for Document {
 
             let label = k.as_bytes().hash64();
 
-            buf.put_u64(0x01); // record type, 0x01 = document
+            buf.put_u64(0x01); // header (only tag type as of now)
             buf.put_u64(document_hash); // record label
             buf.put_u64(label); // field label
-            buf.put_u64(self.id.0); // pk
+            buf.put_u64(self.id.as_u64()); // pk
 
             batch.insert(
                 Key::from(buf.to_vec()),
