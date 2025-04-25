@@ -214,12 +214,15 @@ version = "0.0.0"
 dependencies = [
  "base62",
  "bytes",
- "criterion",
- "rayon",
  "serde_cbor",
  "sled",
+ "snowflake",
  "xxhash-rust",
 ]
+
+[[package]]
+name = "epoch"
+version = "0.1.0"
 
 [[package]]
 name = "fs2"
@@ -575,6 +578,16 @@ name = "smallvec"
 version = "1.15.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8917285742e9f3e1683f0a9c4e6b57960b7314d0b08d30d1ecd426713ee2eee9"
+
+[[package]]
+name = "snowflake"
+version = "0.1.0"
+dependencies = [
+ "base62",
+ "criterion",
+ "epoch",
+ "rayon",
+]
 
 [[package]]
 name = "syn"
