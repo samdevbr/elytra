@@ -1,19 +1,29 @@
 # Keys
 
-## Header
+## Document Key
+
+Document keys are used to store documents into the sled kv store.
 
 ```
-[tag (2 bytes)][padding (6 bytes)]
++---------------+---------------+
+| Tag           | Partition Key |
+| 0x1 (1 byte)  | 16 bytes      |
++---------------+---------------+
 ```
 
-## Field Node
+### Partition Key
+
+A document partition key is used to embed the collection the document is part of,
+and it's unique id (a snowflake).
+
+This provides key locality for documents within the same collection, and a
+natural sorting order by id.
+> Since it's a snowflake it also sorts by creation time.
 
 ```
-[header (8 bytes)][label (8 bytes)][field (8 bytes)][id (8 bytes)]
-```
-
-## Edge Node
-
-```
-[header (8 bytes)][relation (8 bytes)][source pk (8 bytes)][target pk (8 bytes)]
++-------------------+-----------+
+| Collection Tag    | Snowflake |
+| 64 bits           | 64 bits   |
++-------------------+-----------+
+127               63 62         0
 ```
