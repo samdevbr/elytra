@@ -25,6 +25,10 @@ static WORKER_SEQ_ID: AtomicU8 = AtomicU8::new(0);
 pub struct Snowflake(pub(crate) u64);
 
 impl Snowflake {
+    pub fn new(v: u64) -> Self {
+        Self(v)
+    }
+
     /// Returns time snowflake timestamp (ms since custom epoch)
     pub fn timestamp(&self) -> u64 {
         return self.0 >> 22;

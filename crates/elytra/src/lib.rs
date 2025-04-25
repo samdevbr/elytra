@@ -1,18 +1,8 @@
-use xxhash_rust::xxh64::xxh64;
-
-pub mod document;
+pub mod error;
 pub mod key;
 pub mod shard;
+mod util;
 
-trait Hashable {
-    fn hash64(&self) -> u64;
-}
+pub use error::Error;
 
-impl<T> Hashable for T
-where
-    T: AsRef<[u8]>,
-{
-    fn hash64(&self) -> u64 {
-        xxh64(self.as_ref(), 0)
-    }
-}
+pub type Result<T> = std::result::Result<T, Error>;

@@ -5,10 +5,12 @@ edition = "2021"
 
 [dependencies]
 base62 = "2.2.1"
+bincode = { version = "2.0.1", features = ["serde"] }
 bytes = "1.10.1"
-serde_cbor = "0.11.2"
+serde = { version = "1.0.219", features = ["derive"] }
 sled = "0.34.7"
 snowflake = { version = "0.1.0", path = "../snowflake" }
+thiserror = "2.0.12"
 xxhash-rust = { version = "0.8.15", default-features = false, features = [
     "xxh64",
 ] }
