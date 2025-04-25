@@ -3,7 +3,6 @@ use std::sync::OnceLock;
 use xxhash_rust::xxh64::xxh64;
 
 pub mod document;
-pub mod field;
 pub mod id;
 pub mod key;
 pub mod shard;
