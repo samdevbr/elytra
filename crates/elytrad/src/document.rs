@@ -6,6 +6,7 @@ use snowflake::{snowflake, Snowflake};
 
 use crate::{key::Key, shard::RecordEncoder, Hashable};
 
+#[derive(Debug)]
 pub struct Document {
     id: Snowflake,
     label: String,
@@ -13,16 +14,14 @@ pub struct Document {
 }
 
 impl Document {
-    pub fn new<I>(label: String, fields: Option<I>) -> Self
+    pub fn new<L>(label: L) -> Self
     where
-        I: Iterator<Item = (String, serde_cbor::Value)>,
+        L: AsRef<str>,
     {
         Self {
             id: snowflake(),
-            fields: fields
-                .map(|f| f.collect())
-                .unwrap_or_else(|| BTreeMap::new()),
-            label,
+            fields: BTreeMap::new(),
+            label: label.as_ref().to_string(),
         }
     }
 
