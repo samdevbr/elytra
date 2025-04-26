@@ -17,4 +17,10 @@ impl Shard {
 
         Ok(Self { db })
     }
+
+    pub fn put<K: AsRef<[u8]>, V: AsRef<[u8]>>(&self, k: K, v: V) -> crate::Result<()> {
+        self.db.insert(k, v.as_ref())?;
+
+        Ok(())
+    }
 }
