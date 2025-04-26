@@ -18,4 +18,8 @@ impl PartitionKey {
     pub fn id(&self) -> Snowflake {
         Snowflake::new(self.0 as u64)
     }
+
+    pub fn as_slice(&self) -> [u8; 16] {
+        self.0.to_be_bytes()
+    }
 }
