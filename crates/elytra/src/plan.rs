@@ -10,25 +10,25 @@ pub enum LogicalPlan {
     UpsertDocument {
         id: Snowflake,
         collection: String,
-        fields: Map,
+        input: Map,
     },
 }
 
 impl LogicalPlan {
-    pub fn execute(self, _shard: &Shard) -> crate::Result<PhysicalPlan> {
+    pub fn execute(self) -> crate::Result<PhysicalPlan> {
         match self {
             LogicalPlan::UpsertDocument {
                 id,
                 collection,
-                fields,
+                input,
             } => {
-                let blob = bincode::encode_to_vec(fields, bincode::config::standard())?;
+                let blob = bincode::encode_to_vec(input, bincode::config::standard())?;
                 let pk = PartitionKey::new(hash_str(&collection), id);
 
                 let mut buf = BytesMut::with_capacity(17);
 
                 buf.put_u8(0x1);
-                buf.put(&pk.as_slice()[..]);
+                buf.put_slice(&pk.as_slice());
 
                 Ok(PhysicalPlan::PutKey(buf.to_vec(), blob))
             }
