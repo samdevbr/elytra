@@ -7,6 +7,7 @@ edition = "2021"
 base62 = "2.2.1"
 bincode = { version = "2.0.1", features = ["serde"] }
 bytes = "1.10.1"
+indexmap = { version = "2.9.0", features = ["serde"] }
 serde = { version = "1.0.219", features = ["derive"] }
 sled = "0.34.7"
 snowflake = { version = "0.1.0", path = "../snowflake" }
